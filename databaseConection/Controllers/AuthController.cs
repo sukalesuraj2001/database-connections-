@@ -1,5 +1,6 @@
 ﻿using databaseConection.Data;
 using databaseConection.Models.Entity;
+using databaseConection.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,13 +12,13 @@ namespace databaseConection.Controllers
     public class AuthController : ControllerBase
     {
 
-        private readonly AppDbContext _context;
+        private readonly IAuthservice _authService;
 
 
         //Di container
-        public AuthController( AppDbContext context)
+        public AuthController( IAuthservice authService)
         {
-            _context = context; 
+            _authService = authService;
         }
 
 
@@ -25,9 +26,10 @@ namespace databaseConection.Controllers
         [Route("getAllUsers")]
         public async Task<IActionResult> getAllEmployee()
         {
-            var resp = await _context.Users.ToListAsync();
+            var resp = await _authService.getAllUsers();
             return Ok(new
             {
+                message="All users fetch successfully !!",  
                 response = resp
             });
         }
@@ -38,12 +40,7 @@ namespace databaseConection.Controllers
         public async Task<IActionResult> registerEmp(User users)
         {
 
-            var res = new User
-            {
-                Name = users.Name
-            };
-            await _context.Users.AddAsync(res);
-            await _context.SaveChangesAsync();
+            var resp = await _authService.AddUser(users);
 
             return Ok(new
             {
@@ -55,7 +52,7 @@ namespace databaseConection.Controllers
 
         public async Task<IActionResult> getUserById(Guid id)
         {
-            var res = await _context.Users.FindAsync(id);
+            var res = await _authService.FineUserById(id);
 
             if (res == null) NotFound();
 
@@ -68,14 +65,7 @@ namespace databaseConection.Controllers
 
         public async Task<IActionResult> updateUser(Guid id, User users)
         {
-            var res = await _context.Users.FindAsync(id);
-
-            if (res == null) NotFound();
-
-            res.Name = users.Name;
-
-            await _context.SaveChangesAsync();
-
+            var res = await _authService.UpdateUser(id, users);
             return Ok(new
             {
                 message = "user updated sucessfully!"
@@ -89,11 +79,7 @@ namespace databaseConection.Controllers
 
         public async Task<IActionResult> deleteUser(Guid id)
         {
-            var res = await _context.Users.FindAsync(id);
-
-             _context.Users.Remove(res);
-
-            await _context.SaveChangesAsync();
+            var res = await _authService.deleteUser(id);
 
             return Ok(new
             {
